@@ -26,11 +26,52 @@ class MessagesController: UITableViewController {
         
         tableView.register(UserCell.self, forCellReuseIdentifier: cellId)
         
-        observeMessages()
+        // observeMessages()
     }
 
     var messages = [Message]()
     var messagesDictionary = [String: Message]()
+    
+    func observeUserMessages() {
+        guard let uid = FIRAuth.auth()?.currentUser?.uid else {
+            return
+        }
+        let ref = FIRDatabase.database().reference().child("user-messages").child(uid)
+        
+        ref.observe(.childAdded, with: { (snapshot) in
+            let messageId = snapshot.key
+            let messagesReference = FIRDatabase.database().reference().child("messages").child(messageId)
+            messagesReference.observeSingleEvent(of: .value, with: { (snapshot) in
+                if let dictionary = snapshot.value as? [String: Any] {
+                    let message = Message()
+                    message.setValuesForKeys(dictionary)
+                    // print(message)
+                    // self.messages.append(message)
+                    
+                    // unwrap the value
+                    if let toId = message.toId {
+                        // messages assigned to user ids
+                        // assigned last message to the key of ids which will be displayed later
+                        self.messagesDictionary[toId] = message
+                        // print(self.messagesDictionary)
+                        
+                        // turn the dictionary of messages for 1 user into an array of messages
+                        self.messages = Array(self.messagesDictionary.values)
+                        // print(self.messages)
+                        
+                        // sort all messages according to time
+                        self.messages.sort(by: { (message1, message2) -> Bool in
+                            return (message1.timeStamp?.intValue)! > (message2.timeStamp?.intValue)!
+                        })
+                    }
+                    // this will crash because of background thread, call this on dispatch async
+                    DispatchQueue.main.async(execute: {
+                        self.tableView.reloadData()
+                    })
+                }
+            }, withCancel: nil)
+        }, withCancel: nil)
+    }
     
     func observeMessages() {
         let ref = FIRDatabase.database().reference().child("messages")
@@ -129,6 +170,11 @@ class MessagesController: UITableViewController {
     // sets the imageView and the nameLabel in a constraint
     func setupNavBarWithUser(user: User) {
         // self.navigationItem.title = user.name
+        
+        messages.removeAll()
+        messagesDictionary.removeAll()
+        tableView.reloadData()
+        observeUserMessages()
         
         let titleView = UIView()
         

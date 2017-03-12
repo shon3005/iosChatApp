@@ -95,7 +95,21 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate {
         let timeStamp = Int(NSDate().timeIntervalSince1970)
         let childRef = ref.childByAutoId()
         let values = ["text": inputTextField.text!, "toId": toId, "fromId": fromId, "timeStamp": timeStamp] as [String : Any]
-        childRef.updateChildValues(values)
+        // childRef.updateChildValues(values)
+        childRef.updateChildValues(values) { (error, ref) in
+            if error != nil {
+                print(error)
+                return
+            }
+            
+            let userMessagesRef = FIRDatabase.database().reference().child("user-messages").child(fromId)
+            
+            let messageId = childRef.key
+            userMessagesRef.updateChildValues([messageId:1])
+            
+            let recipientUserMessagesRef = FIRDatabase.database().reference().child("user-messages").child(toId)
+            recipientUserMessagesRef.updateChildValues([messageId:1])
+        }
     }
     
     // allow for the enter button to send message as well
