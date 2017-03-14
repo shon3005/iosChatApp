@@ -32,14 +32,19 @@ class MessagesController: UITableViewController {
     var messages = [Message]()
     var messagesDictionary = [String: Message]()
     
+    // function to observe the users messages
     func observeUserMessages() {
+        
+        // prevent crashes when unwrapping uid
         guard let uid = FIRAuth.auth()?.currentUser?.uid else {
             return
         }
         let ref = FIRDatabase.database().reference().child("user-messages").child(uid)
         
+        // assign the key (which is the id) as message id
         ref.observe(.childAdded, with: { (snapshot) in
             let messageId = snapshot.key
+            // look for the reference in firebase for messageId
             let messagesReference = FIRDatabase.database().reference().child("messages").child(messageId)
             messagesReference.observeSingleEvent(of: .value, with: { (snapshot) in
                 if let dictionary = snapshot.value as? [String: Any] {
@@ -73,6 +78,7 @@ class MessagesController: UITableViewController {
         }, withCancel: nil)
     }
     
+    // don't use this function at all
     func observeMessages() {
         let ref = FIRDatabase.database().reference().child("messages")
         ref.observe(.childAdded, with: { (snapshot) in
@@ -136,6 +142,25 @@ class MessagesController: UITableViewController {
         return 72
     }
     
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let message = messages[indexPath.row]
+        
+        guard let chatPartnerId = message.chatPartnerId() else {
+            return
+        }
+        
+        let ref = FIRDatabase.database().reference().child("users").child(chatPartnerId)
+        ref.observeSingleEvent(of: .value, with: { (snapshot) in
+            guard let dictionary = snapshot.value as? [String: AnyObject] else {
+                return
+            }
+            let user = User()
+            user.id = chatPartnerId
+            user.setValuesForKeys(dictionary)
+            self.showChatControllerForUser(user: user)
+        }, withCancel: nil)
+    }
+    
     func checkIfUserIsLoggedIn() {
         // user is not logged in
         if FIRAuth.auth()?.currentUser?.uid == nil {
@@ -174,6 +199,8 @@ class MessagesController: UITableViewController {
         messages.removeAll()
         messagesDictionary.removeAll()
         tableView.reloadData()
+        
+        // call the function here and not in viewdidload to display the relevant messages after removing all the messages
         observeUserMessages()
         
         let titleView = UIView()

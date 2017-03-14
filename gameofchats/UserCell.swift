@@ -15,18 +15,7 @@ class UserCell: UITableViewCell {
     // makes the message details in the cell on Messages Controller
     var message: Message? {
         didSet {
-            if let toId = message?.toId {
-                let ref = FIRDatabase.database().reference().child("users").child(toId)
-                ref.observeSingleEvent(of: .value, with: { (snapshot) in
-                    if let dictionary = snapshot.value as? [String: AnyObject] {
-                        self.textLabel?.text = dictionary["name"] as? String
-                        if let profileImageUrl = dictionary["profileImageUrl"] as? String {
-                            self.profileImageView.loadImageUsingCacheWithUrlString(urlString: profileImageUrl)
-                        }
-                    }
-                    print(snapshot)
-                }, withCancel: nil)
-            }
+            setupNameAndProfileImage()
             //cell.textLabel?.text = message.toId
             detailTextLabel?.text = message?.text
             if let seconds = message?.timeStamp?.doubleValue {
@@ -36,6 +25,24 @@ class UserCell: UITableViewCell {
                 timeLabel.text = dateFormatter.string(from: timeStampDate as Date)
             }
             
+        }
+    }
+    
+    private func setupNameAndProfileImage() {
+        
+        
+        // display all info to the table cell, including profile image and name
+        if let id = message?.chatPartnerId() {
+            let ref = FIRDatabase.database().reference().child("users").child(id)
+            ref.observeSingleEvent(of: .value, with: { (snapshot) in
+                if let dictionary = snapshot.value as? [String: AnyObject] {
+                    self.textLabel?.text = dictionary["name"] as? String
+                    if let profileImageUrl = dictionary["profileImageUrl"] as? String {
+                        self.profileImageView.loadImageUsingCacheWithUrlString(urlString: profileImageUrl)
+                    }
+                }
+                print(snapshot)
+            }, withCancel: nil)
         }
     }
     
@@ -60,7 +67,7 @@ class UserCell: UITableViewCell {
     // time details on the cell
     let timeLabel: UILabel = {
         let label = UILabel()
-        label.text = "MM:HH:SS"
+        // label.text = "MM:HH:SS"
         label.font = UIFont.systemFont(ofSize: 13)
         label.textColor = UIColor.darkGray
         label.translatesAutoresizingMaskIntoConstraints = false

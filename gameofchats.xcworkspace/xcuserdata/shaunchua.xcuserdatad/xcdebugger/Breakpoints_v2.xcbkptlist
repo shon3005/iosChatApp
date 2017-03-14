@@ -10,11 +10,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "gameofchats/MessagesController.swift"
-            timestampString = "511051382.424034"
+            timestampString = "511054061.019747"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "97"
-            endingLineNumber = "97"
+            startingLineNumber = "96"
+            endingLineNumber = "96"
             landmarkName = "observeMessages()"
             landmarkType = "7">
          </BreakpointContent>
