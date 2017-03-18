@@ -22,12 +22,16 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     
     var messages = [Message]()
     
+    // ref for user messages
     func observeMessages() {
+        // current logged in user
         guard let uid = FIRAuth.auth()?.currentUser?.uid else {
             return
         }
         
+        // observe all the messages
         let userMessagesRef = FIRDatabase.database().reference().child("user-messages").child(uid)
+        // child added for all the children under this node
         userMessagesRef.observe(.childAdded, with: { (snapshot) in
             
             let messageId = snapshot.key
@@ -43,9 +47,13 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
                 // potential of crashing if keys don't match
                 message.setValuesForKeys(dictionary)
                 
+                // check if chatPartnerID is user?.id only see chat partner's messages
                 if message.chatPartnerId() == self.user?.id {
                     self.messages.append(message)
+                    // because we are in a background thread, to get back on to the main thread
+                    // changing ui components
                     DispatchQueue.main.async(execute: {
+                        // refresh the collectionView
                         self.collectionView?.reloadData()
                     })
                 }
@@ -68,6 +76,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         super.viewDidLoad()
         collectionView?.alwaysBounceVertical = true
         collectionView?.backgroundColor = UIColor.white
+        // register cell id to cell
         collectionView?.register(ChatMessageCell.self, forCellWithReuseIdentifier: cellId)
         setupInputComponents()
     }
@@ -76,6 +85,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         return messages.count
     }
     
+    // put the text on the cell
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as! ChatMessageCell
         
@@ -85,6 +95,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         return cell
     }
     
+    // cells will expand to cover width of controller
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: view.frame.width, height: 80)
     }

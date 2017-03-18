@@ -6,8 +6,11 @@
 //  Copyright © 2017 Shaun Chua. All rights reserved.
 //
 
+// this helper helps to reduce download cost, when image is loaded, it doesnt download the image again when user stays on the view controller
+
 import UIKit
 
+// memory bank for all our images
 let imageCache = NSCache<AnyObject, AnyObject>()
 
 extension UIImageView {
@@ -16,7 +19,7 @@ extension UIImageView {
         
         self.image = nil
         
-        // check cache for UIImage first
+        // check cache for UIImage first and load if it exists
         if let cachedImage = imageCache.object(forKey: urlString as AnyObject) as? UIImage {
             self.image = cachedImage
             return
@@ -32,9 +35,13 @@ extension UIImageView {
                 return
             }
             
+            // threading technique
             DispatchQueue.main.async(execute: {
+                // do this unwrapping safely
                 if let downloadedImage = UIImage(data: data!) {
+                    // add to the cache
                     imageCache.setObject(downloadedImage, forKey: urlString as AnyObject)
+                    // set image to downloaded image
                     self.image = downloadedImage
                 }
             })

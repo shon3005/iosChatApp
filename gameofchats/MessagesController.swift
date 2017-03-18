@@ -145,18 +145,23 @@ class MessagesController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let message = messages[indexPath.row]
         
+        // from the Message Class
         guard let chatPartnerId = message.chatPartnerId() else {
             return
         }
         
+        // must look for reference from database
         let ref = FIRDatabase.database().reference().child("users").child(chatPartnerId)
+        // observe 1 event cause you wanna just look at 1 user
         ref.observeSingleEvent(of: .value, with: { (snapshot) in
+            // check if valid dictionary
             guard let dictionary = snapshot.value as? [String: AnyObject] else {
                 return
             }
             let user = User()
             user.id = chatPartnerId
             user.setValuesForKeys(dictionary)
+            // call the chatlogcontroller with specified user
             self.showChatControllerForUser(user: user)
         }, withCancel: nil)
     }
